@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="flow-binario.vcxproj" Id="7eaae50b-24e5-4e4b-8c2b-8718c1e527d1" />
+</Solution>
