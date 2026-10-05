@@ -182,7 +182,8 @@ int main(void){
     // done with file
     fclose(file);
 
-
+	printf("%d\n",IdentifyCell(cell, width, height, (unsigned char*)DigitBitmap[0], (unsigned char*)DigitBitmap[1]));
+	
     // free allocated buffer
     free(cell);
     return EXIT_SUCCESS;
