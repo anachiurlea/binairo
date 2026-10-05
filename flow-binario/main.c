@@ -96,6 +96,70 @@ void PrintCell(unsigned char *cell, int height, int width) {
 	}
 }
 
+// Compare Cell with Bitmap "0" and Bitmap "1" and return which number is identified at what percentage of pixels
+int IdentifyCell(unsigned char* cell_array, int cell_width, int cell_height, unsigned char* bitmap_0, unsigned char* bitmap_1) {
+    
+    const int bitmap_width = 32;
+    const int bitmap_height = 32;
+
+    int max_matching_pixels_0 = 0; // when comparing with bitmap "0"
+    int max_matching_pixels_1 = 0; // when comparing with bitmap "1"
+
+    const double seuil = 0.90;
+
+    // i is the offset in x ; j is the offset in y
+    for (size_t i = 0; i <= (cell_width - bitmap_width); i++) {
+        for (size_t j = 0; j <= (cell_height - bitmap_height); j++) {
+            
+            int current_matching_pixels_0 = 0;
+            int current_matching_pixels_1 = 0;
+
+            // for each offset count the number of matching pixels 
+            // y is the line, x is the column
+            for (size_t x = 0; x < bitmap_width; x++) {
+                for (size_t y = 0; y < bitmap_height; y++) {
+
+                    unsigned char cell_bit = GetCellBit(cell_array, cell_width, j + y, i + x);
+
+                    unsigned char bitmap_bit_0 = GetDigitBitmapBit(bitmap_0, y, x);
+                    unsigned char bitmap_bit_1 = GetDigitBitmapBit(bitmap_1, y, x);
+
+                    if (cell_bit == bitmap_bit_0) {
+                        current_matching_pixels_0++;
+                    }
+
+                    if (cell_bit == bitmap_bit_1) {
+                        current_matching_pixels_1++;
+                    }
+                }
+            }
+
+            if (current_matching_pixels_0 > max_matching_pixels_0) {
+                max_matching_pixels_0 = current_matching_pixels_0;
+            }
+
+            if (current_matching_pixels_1 > max_matching_pixels_1) {
+                max_matching_pixels_1 = current_matching_pixels_1;
+            }
+
+        }
+    }
+ 
+    double best_ratio_0 = (double) max_matching_pixels_0 / (32*32); // best ratio of mathcing pixels when comparing with bitmap "0"
+
+    double best_ratio_1 = (double) max_matching_pixels_1 / (32*32); // best ratio of mathcing pixels when comparing with bitmap "1"
+    
+    if (best_ratio_0 > seuil) {
+        printf("chiffre '0' a été reconnu à %.2f%%\n", best_ratio_0 * 100.0);
+        return 0;
+    } else if (best_ratio_1 > seuil) {
+        printf("chiffre '1' a été reconnu à %.2f%%\n", best_ratio_1 * 100.0);
+        return 1;
+    } else {
+        printf("Error!");
+        return -1;
+    }
+}
 
 int main(void){
     FILE* file = NULL;
