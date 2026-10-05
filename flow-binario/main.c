@@ -7,7 +7,7 @@
 #include "FontRasterized_0_1.h"
 
 // read cell dimensions from binary file
-int ReadCellSize(const char *filename, FILE **file, uint32_t* width, uint32_t* height){
+int ReadCellSize(const char *filename, FILE **file, uint32_t *width, uint32_t *height){
     *file = fopen(filename, "rb");
     
     if (*file  == NULL){
@@ -28,6 +28,7 @@ int ReadCellSize(const char *filename, FILE **file, uint32_t* width, uint32_t* h
         *file = NULL;
         return 0;
     }
+
     
     // bounds validation
     if (*width < 10 || *height > 100 || *height < 10 || *width >100){
@@ -68,14 +69,14 @@ int ReadPixel(FILE *file, unsigned char **Cell, uint32_t width, uint32_t height)
 }
 
 // get bit from single-bit bitmap array
-uint8_t GetDigitBitMapBit(const uint8_t *array, uint32_t x, uint32_t y) {
-	size_t i_0 = x / 8 + 4 * y; // 4y gives us which row, since we are doing 4 times byte times y, and x/8 gives which byte within the row.
+uint8_t GetDigitBitmapBit(const uint8_t *array, uint32_t x, uint32_t y) {
+	size_t i_0 = (x / 8) + (4 * y); // 4y gives us which row, since we are doing 4 times byte times y, and x/8 gives which byte within the row.
 	size_t i_1 = x % 8; // x percent 8, gives remainder. X divided by 8 gives the byte, and the remainder gives the count (0,1,2,3) that tells us which bit we are on in the specific byte
 	return (array[i_0] >> i_1) & 1;
 }
 
 // get pixel value
-unsigned char GetCellBit(unsigned char* cell, int width, int line, int col){
+unsigned char GetCellBit(unsigned char *cell, int width, int line, int col){
 	size_t i = (size_t)width * line + col;
 	return cell[i];
 
@@ -121,8 +122,8 @@ int IdentifyCell(unsigned char* cell_array, int cell_width, int cell_height, uns
 
                     unsigned char cell_bit = GetCellBit(cell_array, cell_width, j + y, i + x);
 
-                    unsigned char bitmap_bit_0 = GetDigitBitmapBit(bitmap_0, y, x);
-                    unsigned char bitmap_bit_1 = GetDigitBitmapBit(bitmap_1, y, x);
+                    unsigned char bitmap_bit_0 = GetDigitBitmapBit(bitmap_0, x, y);
+                    unsigned char bitmap_bit_1 = GetDigitBitmapBit(bitmap_1, x, y);
 
                     if (cell_bit == bitmap_bit_0) {
                         current_matching_pixels_0++;
@@ -150,10 +151,10 @@ int IdentifyCell(unsigned char* cell_array, int cell_width, int cell_height, uns
     double best_ratio_1 = (double) max_matching_pixels_1 / (32*32); // best ratio of mathcing pixels when comparing with bitmap "1"
     
     if (best_ratio_0 > seuil) {
-        printf("chiffre '0' a été reconnu à %.2f%%\n", best_ratio_0 * 100.0);
+        printf("number '0' recognised at %.2f%%\n", best_ratio_0 * 100.0);
         return 0;
     } else if (best_ratio_1 > seuil) {
-        printf("chiffre '1' a été reconnu à %.2f%%\n", best_ratio_1 * 100.0);
+        printf("number '1' recognised at %.2f%%\n", best_ratio_1 * 100.0);
         return 1;
     } else {
         printf("Error!");
@@ -161,13 +162,14 @@ int IdentifyCell(unsigned char* cell_array, int cell_width, int cell_height, uns
     }
 }
 
+
 int main(void){
     FILE* file = NULL;
     uint32_t width = 0, height = 0;
     unsigned char* cell = NULL;
     //PrintCell(Cell_0, 75, 75);
     // first; read dimensions
-    if (!ReadCellSize("Cell.bin", &file, &width, &height)) {
+    if (!ReadCellSize("Cell0.bin", &file, &width, &height)) {
         return EXIT_FAILURE;
     }
     
