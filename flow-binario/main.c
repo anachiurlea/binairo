@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include "Cell_0.h"
+#include "FontRasterized_0_1.h"
 
 // read cell dimensions from binary file
 int ReadCellSize(const char *filename, FILE **file, uint32_t* width, uint32_t* height){
