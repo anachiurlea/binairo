@@ -68,6 +68,13 @@ unsigned char GetCellBit(unsigned char* cell, int width, int line, int col){
 	size_t i = width * line + col;
 	return cell[i];
 
+<<<<<<< Updated upstream:flow-binario/main.c
+=======
+
+// get pixel value
+unsigned char GetCellBit(const unsigned char *cell, int width, int line, int col){
+	return cell[(size_t)width * line + col];
+>>>>>>> Stashed changes:flow-binario/OCR.c
 }
 PrintCell(unsigned char *cell, int height, int width) {
 	for (int line = 0 ; line < height; line++) {
