@@ -20,7 +20,7 @@ end
 % 4. Try guessing 0 first.
 grid0 = grid;
 grid0(r, c) = 0;
-[sol0, valid0] = SolveBinairo(grid0);
+[sol0, valid0] = solvebinairo(grid0);
 if valid0
     grid = sol0;
     valid = true;
@@ -30,7 +30,7 @@ end
 % 5. If 0 failed, try guessing 1
 grid1 = grid;
 grid1(r, c) = 1;
-[sol1, valid1] = SolveBinairo(grid1);
+[sol1, valid1] = solvebinairo(grid1);
 if valid1
     grid = sol1;
     valid = true;
