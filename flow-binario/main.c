@@ -262,7 +262,7 @@ int main(int argc, const char* argv[]) {
     int result = IdentifyCell(cell, (int)width, (int)height, thr_empty, thr0, thr1, &percent);
     free(cell);
 
-    printf("d: '%s', %.5f%%\n", result == -1 ? "empty" : (result == 0 ? "0" : "1"), percent);
+    //printf("d: '%s', %.5f%%\n", result == -1 ? "empty" : (result == 0 ? "0" : "1"), percent);
 
     if ((err = WriteResult(outpath, result, percent)) != 0) return err;
     return 0;
