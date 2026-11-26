@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include "Cell_0.h"
@@ -25,65 +26,65 @@
 
 
 // read cell dimensions from binary file
-int ReadCellSize(const char *filename, FILE **file, uint32_t *width, uint32_t *height){
+int ReadCellSize(const char* filename, FILE** file, uint32_t* width, uint32_t* height) {
     *file = fopen(filename, "rb");
-    
-    if (*file  == NULL){
+
+    if (*file == NULL) {
         printf("Error: Couldn't open %s\n", filename);
         return ERR_FILE;
     }
-    
-    if (fread(width, sizeof(uint32_t), 1, *file) != 1){
+
+    if (fread(width, sizeof(uint32_t), 1, *file) != 1) {
         printf("Error: Couldn't read width\n");
         fclose(*file);
         *file = NULL;
         return ERR_FILE;
     }
-    
-    if (fread(height, sizeof(uint32_t), 1, *file) != 1){
+
+    if (fread(height, sizeof(uint32_t), 1, *file) != 1) {
         printf("Error: Couldn't read height\n");
         fclose(*file);
         *file = NULL;
         return ERR_FILE;
     }
 
-    
+
     // bounds validation
-    if (*width < MIN_DIM || *height > MAX_DIM || *height < MIN_DIM || *width > MAX_DIM || *width < DIGIT_SIZE || *height < DIGIT_SIZE){
+    if (*width < MIN_DIM || *height > MAX_DIM || *height < MIN_DIM || *width > MAX_DIM || *width < DIGIT_SIZE || *height < DIGIT_SIZE) {
         printf("Error: Invalid image dimensions (%u x %u)\n", *width, *height);
         fclose(*file);
         *file = NULL;
         return ERR_DIMS;
     }
-    
+
     return 0;
 }
 
 // read pixel into array
-int ReadPixel(FILE *file, unsigned char **cell, uint32_t width, uint32_t height){
+int ReadPixel(FILE* file, unsigned char** cell, uint32_t width, uint32_t height) {
     size_t pixelnb = (size_t)width * height;
-    
-    *cell =  (unsigned char *)malloc(pixelnb);
+
+    *cell = (unsigned char*)malloc(pixelnb);
     if (*cell == NULL)
     {
         printf("Error: Memory allocation failed\n");
         return ERR_PIXELS;
     }
-    
+
     size_t nbread = fread(*cell, sizeof(unsigned char), pixelnb, file);
-    
+
     if (nbread != pixelnb)
     {
         printf("Error: Not enough pixels read (expected %zu, got %zu)\n", pixelnb, nbread);
         free(*cell);
         *cell = NULL;
         return ERR_PIXELS;
-        
+
     }
     unsigned char extra;
     if (fread(&extra, 1, 1, file) == 1) {
         printf("Error: Too many pixels in file (expected %zu)\n", pixelnb);
-        free(*cell); 
+        free(*cell);
         *cell = NULL;
         return ERR_PIXELS;
     }
@@ -92,7 +93,7 @@ int ReadPixel(FILE *file, unsigned char **cell, uint32_t width, uint32_t height)
     for (size_t i = 0; i < pixelnb; i++) {
         if ((*cell)[i] > 1) {
             printf("Error: Invalid pixel value %u at index %zu\n", (unsigned)(*cell)[i], i);
-            free(*cell); 
+            free(*cell);
             *cell = NULL;
             return ERR_PIXELS;
         }
@@ -100,33 +101,33 @@ int ReadPixel(FILE *file, unsigned char **cell, uint32_t width, uint32_t height)
 
 
     return 0;
-    
+
 }
 
 // get bit from single-bit bitmap array
 uint8_t GetDigitBitmapBit(int digit, int line, int col) {
-    return (DigitBitmap[digit][line] >> col) & 1;   // column 0 = least significant bit
+    return (DigitBitmap[digit][line] >> (DIGIT_SIZE - 1 - col)) & 1;
 }
 
 
 // get pixel value
-unsigned char GetCellBit(unsigned char *cell, int width, int line, int col){
-	return cell[(size_t)width * line + col];
+unsigned char GetCellBit(unsigned char* cell, int width, int line, int col) {
+    return cell[(size_t)width * line + col];
 }
 
 // print cell content to the terminal
-void PrintCell(unsigned char *cell, int height, int width) {
-	for (int line = 0 ; line < height; line++) {
-		for (int col = 0; col < width; col++) {
-			if (GetCellBit(cell, width, line, col) == 1) {
-				printf("*");
-			}
-			else {
-				printf(".");
-			}
-		}
+void PrintCell(unsigned char* cell, int height, int width) {
+    for (int line = 0; line < height; line++) {
+        for (int col = 0; col < width; col++) {
+            if (GetCellBit(cell, width, line, col) == 1) {
+                printf("*");
+            }
+            else {
+                printf(".");
+            }
+        }
         printf("\n");
-	}
+    }
 }
 
 // Best match in percentage of a 32x32 digit bitmap slid over the cell
@@ -155,14 +156,7 @@ double EmptyPercent(const unsigned char* cell, int c_width, int c_height) {
 }
 
 // Returns 1 or 0 for digit, or -1 if empty. *percent is the similarity
-int IdentifyCell(const unsigned char* cell, int c_width, int c_height, double thr_empty, double thr0, double thr1, double *percent) {
-    // checking if the cell is empty
-    double empty = EmptyPercent(cell, c_width, c_height);
-    if (empty >= thr_empty) {
-        *percent = empty;
-        return -1;
-    }
-
+int IdentifyCell(const unsigned char* cell, int c_width, int c_height, double thr_empty, double thr0, double thr1, double* percent) {
     // checking bestmatchpercent for 0 and 1
     double prob_0 = BestMatchPercent(cell, c_width, c_height, 0);
     double prob_1 = BestMatchPercent(cell, c_width, c_height, 1);
@@ -190,15 +184,15 @@ int IdentifyCell(const unsigned char* cell, int c_width, int c_height, double th
     }
 
     // neither digit found: treat as empty
-    *percent = empty;   
+    *percent = EmptyPercent(cell, c_width, c_height);
     return -1;
 }
 
 // build a "CellValue.txt" file
-int WriteResult(int result, double percent) {
-    FILE* out = fopen("CellValue.txt", "w");
+int WriteResult(const char* outpath, int result, double percent) {
+    FILE* out = fopen(outpath, "w");
     if (out == NULL) {
-        printf("Error: Couldn't open CellValue.txt for writing\n");
+        printf("Error: Couldn't open %s for writing\n", outpath);
         return ERR_OUTPUT;
     }
     //for an empty file
@@ -214,20 +208,42 @@ int WriteResult(int result, double percent) {
     return 0;
 }
 
-int main(int argc, const char *argv[]) {
+int main(int argc, const char* argv[]) {
     // error handle not correct amount of data given
     if (argc != 5) {
         printf("Usage: %s \"path/to/Cell.bin\" thr_empty thr_0 thr_1\n", argv[0]);
         return ERR_USAGE;
     }
-    double thr_empty = atoi(argv[2]);
-    double thr0 = atoi(argv[3]);
-    double thr1 = atoi(argv[4]);
+    double thr_empty = atof(argv[2]);
+    double thr0 = atof(argv[3]);
+    double thr1 = atof(argv[4]);
     // error handle incorrect thresholds 
     if (thr_empty < 0 || thr_empty > 100 || thr0 < 0 || thr0 > 100 || thr1 < 0 || thr1 > 100) {
         printf("Error: thresholds must be between 0 and 100\n");
         return ERR_USAGE;
     }
+
+    // building the outpath for "Cellvalue.txt"
+    char outpath[1024];
+    const char* name = "CellValue.txt";
+    // for windows
+    const char* s1 = strrchr(argv[1], '\\');
+    // for mac
+    const char* s2 = strrchr(argv[1], '/');
+    const char* sep = (s1 > s2) ? s1 : s2;
+    size_t dirlen = sep ? (size_t)(sep - argv[1]) + 1 : 0;
+
+    if (dirlen + strlen(name) + 1 > sizeof outpath) {
+        printf("Error: Path too long\n");
+        return ERR_FILE;
+    }
+
+    // actual path
+    memcpy(outpath, argv[1], dirlen);
+    strcpy(outpath + dirlen, name);
+
+    remove(outpath);
+
     // reading file
     FILE* file = NULL;
     uint32_t width = 0, height = 0;
@@ -236,9 +252,9 @@ int main(int argc, const char *argv[]) {
 
     //handling function errors while reading
     if ((err = ReadCellSize(argv[1], &file, &width, &height)) != 0) return err;
-    if ((err = ReadPixel(file, &cell, width, height)) != 0) { 
-        fclose(file); 
-        return err; 
+    if ((err = ReadPixel(file, &cell, width, height)) != 0) {
+        fclose(file);
+        return err;
     }
     fclose(file);
 
@@ -246,8 +262,10 @@ int main(int argc, const char *argv[]) {
     int result = IdentifyCell(cell, (int)width, (int)height, thr_empty, thr0, thr1, &percent);
     free(cell);
 
-    printf("d: '%s', %.4f%%\n", result == -1 ? "empty" : (result == 0 ? "0" : "1"), percent);
+    printf("d: '%s', %.5f%%\n", result == -1 ? "empty" : (result == 0 ? "0" : "1"), percent);
 
-    if ((err = WriteResult(result, percent)) != 0) return err;
+    if ((err = WriteResult(outpath, result, percent)) != 0) return err;
     return 0;
 }
+
+
